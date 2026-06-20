@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/hr", "dest": "/hr.html" },
+    { "src": "/", "dest": "/index.html" }
+  ]
+}

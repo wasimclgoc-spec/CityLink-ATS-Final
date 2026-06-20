@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Citylink Group — Careers</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',sans-serif; }
+body { background:#f1f5f9; min-height:100vh; }
+.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(135deg,#1e3a8a,#3b82f6); }
+.auth-box { background:white; border-radius:20px; padding:36px; width:100%; max-width:420px; box-shadow:0 20px 40px rgba(0,0,0,.12); }
+.auth-box h1 { font-size:1.4rem; font-weight:700; color:#1e293b; margin-bottom:4px; }
+.auth-box .sub { color:#94a3b8; font-size:.85rem; margin-bottom:24px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:.82rem; font-weight:600; color:#475569; margin-bottom:6px; }
+.form-group input { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.95rem; outline:none; transition:border .2s; }
+.form-group input:focus { border-color:#3b82f6; }
+.btn { width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; transition:background .2s; }
+.btn:hover { background:#1d4ed8; }
+.btn:disabled { background:#93c5fd; cursor:not-allowed; }
+.link-row { text-align:center; margin-top:16px; font-size:.85rem; color:#64748b; }
+.link-row a { color:#2563eb; cursor:pointer; font-weight:600; text-decoration:none; }
+.error-msg { background:#fee2e2; color:#dc2626; padding:10px 14px; border-radius:8px; font-size:.85rem; margin-bottom:12px; display:none; }
+.success-msg { background:#dcfce7; color:#16a34a; padding:10px 14px; border-radius:8px; font-size:.85rem; margin-bottom:12px; display:none; }
+/* Dashboard */
+.dashboard { display:none; min-height:100vh; background:#f1f5f9; }
+.topbar { background:#1e3a8a; color:white; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+.topbar h2 { font-size:1.1rem; font-weight:700; }
+.topbar span { font-size:.85rem; opacity:.8; }
+.logout-btn { background:rgba(255,255,255,.2); border:none; color:white; padding:6px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; }
+.container { max-width:900px; margin:0 auto; padding:24px; }
+.section-title { font-size:1.1rem; font-weight:700; color:#1e293b; margin-bottom:16px; }
+.job-card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.job-card h3 { font-size:1rem; font-weight:700; color:#1e293b; margin-bottom:6px; }
+.job-meta { font-size:.82rem; color:#64748b; margin-bottom:12px; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+.badge-open { background:#dcfce7; color:#16a34a; }
+.badge-pending { background:#fef9c3; color:#ca8a04; }
+.badge-selected { background:#dcfce7; color:#16a34a; }
+.badge-rejected { background:#fee2e2; color:#dc2626; }
+.apply-btn { background:#2563eb; color:white; border:none; padding:8px 20px; border-radius:8px; font-size:.85rem; font-weight:600; cursor:pointer; }
+.apply-btn:disabled { background:#93c5fd; cursor:not-allowed; }
+.tabs { display:flex; gap:8px; margin-bottom:20px; }
+.tab { padding:8px 20px; border-radius:20px; border:none; font-size:.85rem; font-weight:600; cursor:pointer; background:#e2e8f0; color:#475569; }
+.tab.active { background:#2563eb; color:white; }
+.app-card { background:white; border-radius:14px; padding:16px 20px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); display:flex; justify-content:space-between; align-items:center; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:white; border-radius:16px; padding:28px; width:90%; max-width:440px; }
+.modal h3 { font-size:1.1rem; font-weight:700; margin-bottom:16px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div class="auth-page" id="loginPage">
+  <div class="auth-box">
+    <h1>👤 Candidate Portal</h1>
+    <p class="sub">Citylink Group — Careers</p>
+    <div class="error-msg" id="loginError"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="your@email.com"/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••"/></div>
+    <button class="btn" onclick="doLogin()">Sign In</button>
+    <div class="link-row">No account? <a onclick="showPage('registerPage')">Create Account</a></div>
+  </div>
+</div>
+
+<!-- REGISTER PAGE -->
+<div class="auth-page" id="registerPage" style="display:none">
+  <div class="auth-box">
+    <h1>✏️ Create Account</h1>
+    <p class="sub">Candidate Registration</p>
+    <div class="error-msg" id="regError"></div>
+    <div class="success-msg" id="regSuccess"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Your full name"/></div>
+    <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com"/></div>
+    <div class="form-group"><label>Mobile</label><input type="tel" id="regMobile" placeholder="+966..."/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="regPass" placeholder="Min 6 characters"/></div>
+    <div class="form-group"><label>Confirm Password</label><input type="password" id="regPass2" placeholder="Repeat password"/></div>
+    <button class="btn" id="regBtn" onclick="doRegister()">Create Account</button>
+    <div class="link-row">Have account? <a onclick="showPage('loginPage')">Sign In</a></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="topbar">
+    <h2>🏢 Citylink Group Careers</h2>
+    <div>
+      <span id="welcomeMsg"></span>
+      <button class="logout-btn" onclick="doLogout()" style="margin-left:12px">Logout</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('jobs', this)">Available Jobs</button>
+      <button class="tab" onclick="switchTab('myapps', this)">My Applications</button>
+    </div>
+
+    <!-- Jobs Tab -->
+    <div id="jobsTab">
+      <p class="section-title">Open Positions</p>
+      <div id="jobsList"></div>
+    </div>
+
+    <!-- My Applications Tab -->
+    <div id="myappsTab" style="display:none">
+      <p class="section-title">My Applications</p>
+      <div id="myAppsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Apply Modal -->
+<div class="modal-overlay" id="applyModal">
+  <div class="modal">
+    <h3>Apply for <span id="modalJobTitle"></span></h3>
+    <div class="error-msg" id="applyError"></div>
+    <div class="form-group"><label>Resume / CV Filename</label><input type="text" id="resumeName" placeholder="e.g. MyCV_2026.pdf"/></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn" style="background:#e2e8f0;color:#475569" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="submitApplication()">Submit Application</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DB Helpers ───────────────────────────────────────────────
+const DB = {
+  get: k => JSON.parse(localStorage.getItem('clg_'+k) || 'null'),
+  set: (k,v) => localStorage.setItem('clg_'+k, JSON.stringify(v)),
+  users: () => DB.get('users') || [],
+  jobs:  () => DB.get('jobs')  || [],
+  apps:  () => DB.get('apps')  || [],
+  saveUsers: v => DB.set('users', v),
+  saveApps:  v => DB.set('apps',  v),
+};
+
+// Seed default HR admin if not present
+(function init() {
+  const users = DB.users();
+  if (!users.find(u => u.email === 'hr@citylink.com')) {
+    users.push({ id:'hr1', name:'HR Admin', email:'hr@citylink.com', mobile:'0500000000', password:'admin123', role:'HR' });
+    DB.saveUsers(users);
+  }
+  // Seed sample job if none
+  if (DB.jobs().length === 0) {
+    DB.set('jobs', [{
+      id:'job1', title:'Logistics Coordinator', status:'OPEN',
+      qualification:"Bachelor's in Logistics or Business",
+      experience:'2-4 years', ageMin:22, ageMax:40,
+      description:'Coordinate shipment schedules, manage vendor relationships, track freight movements.',
+      createdAt: new Date().toISOString()
+    }]);
+  }
+})();
+
+let currentUser = null;
+let applyingJobId = null;
+
+// ─── Navigation ───────────────────────────────────────────────
+function showPage(id) {
+  ['loginPage','registerPage'].forEach(p => {
+    document.getElementById(p).style.display = p===id ? 'flex' : 'none';
+  });
+}
+
+function showDashboard() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('registerPage').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('welcomeMsg').textContent = 'Hello, ' + currentUser.name;
+  loadJobs();
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('jobsTab').style.display = tab==='jobs' ? 'block' : 'none';
+  document.getElementById('myappsTab').style.display = tab==='myapps' ? 'block' : 'none';
+  if (tab === 'myapps') loadMyApps();
+}
+
+// ─── Auth ─────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginError');
+  err.style.display = 'none';
+  if (!email || !pass) { showErr(err,'Please fill in all fields'); return; }
+  const user = DB.users().find(u => u.email===email && u.password===pass && u.role==='CANDIDATE');
+  if (!user) { showErr(err,'Invalid email or password'); return; }
+  currentUser = user;
+  showDashboard();
+}
+
+function doRegister() {
+  const name   = document.getElementById('regName').value.trim();
+  const email  = document.getElementById('regEmail').value.trim();
+  const mobile = document.getElementById('regMobile').value.trim();
+  const pass   = document.getElementById('regPass').value;
+  const pass2  = document.getElementById('regPass2').value;
+  const err    = document.getElementById('regError');
+  const suc    = document.getElementById('regSuccess');
+  const btn    = document.getElementById('regBtn');
+  err.style.display = 'none'; suc.style.display = 'none';
+
+  if (!name||!email||!mobile||!pass||!pass2) { showErr(err,'All fields are required'); return; }
+  if (pass.length < 6) { showErr(err,'Password must be at least 6 characters'); return; }
+  if (pass !== pass2)  { showErr(err,'Passwords do not match'); return; }
+
+  const users = DB.users();
+  if (users.find(u => u.email===email)) { showErr(err,'Email already registered'); return; }
+
+  btn.disabled = true; btn.textContent = 'Creating...';
+
+  const newUser = { id:'u_'+Date.now(), name, email, mobile, password:pass, role:'CANDIDATE' };
+  users.push(newUser);
+  DB.saveUsers(users);
+
+  suc.textContent = '✅ Account created! Please sign in.';
+  suc.style.display = 'block';
+  btn.textContent = 'Create Account'; btn.disabled = false;
+
+  setTimeout(() => {
+    document.getElementById('regName').value = '';
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regMobile').value = '';
+    document.getElementById('regPass').value = '';
+    document.getElementById('regPass2').value = '';
+    showPage('loginPage');
+  }, 1500);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('dashboard').style.display = 'none';
+  showPage('loginPage');
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────
+function loadJobs() {
+  const jobs = DB.jobs().filter(j => j.status === 'OPEN');
+  const myApps = DB.apps().filter(a => a.userId === currentUser.id).map(a => a.jobId);
+  const el = document.getElementById('jobsList');
+  if (!jobs.length) { el.innerHTML = '<p style="color:#94a3b8">No open positions right now.</p>'; return; }
+  el.innerHTML = jobs.map(j => `
+    <div class="job-card">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <h3>${j.title}</h3>
+          <div class="job-meta">
+            ${j.experience ? '⏱ '+j.experience+' experience &nbsp;' : ''}
+            ${j.ageMin&&j.ageMax ? '👤 Age '+j.ageMin+'-'+j.ageMax : ''}
+          </div>
+          <p style="font-size:.85rem;color:#475569;margin-bottom:12px">${j.description||''}</p>
+          ${j.qualification ? '<p style="font-size:.82rem;color:#64748b">🎓 '+j.qualification+'</p>' : ''}
+        </div>
+        <span class="badge badge-open">OPEN</span>
+      </div>
+      <div style="margin-top:14px">
+        <button class="apply-btn" ${myApps.includes(j.id)?'disabled':''} onclick="openApply('${j.id}','${j.title.replace(/'/g,"\\'")}')">
+          ${myApps.includes(j.id) ? '✅ Applied' : 'Apply Now'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function loadMyApps() {
+  const apps = DB.apps().filter(a => a.userId === currentUser.id);
+  const jobs = DB.jobs();
+  const el = document.getElementById('myAppsList');
+  if (!apps.length) { el.innerHTML = '<p style="color:#94a3b8">You have not applied to any jobs yet.</p>'; return; }
+  el.innerHTML = apps.map(a => {
+    const job = jobs.find(j => j.id===a.jobId) || {};
+    const badgeClass = a.status==='SELECTED'?'badge-selected':a.status==='REJECTED'?'badge-rejected':'badge-pending';
+    return `<div class="app-card">
+      <div><strong>${job.title||'Job'}</strong><br><span style="font-size:.82rem;color:#64748b">CV: ${a.resumeName}</span></div>
+      <span class="badge ${badgeClass}">${a.status}</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── Apply ────────────────────────────────────────────────────
+function openApply(jobId, jobTitle) {
+  applyingJobId = jobId;
+  document.getElementById('modalJobTitle').textContent = jobTitle;
+  document.getElementById('resumeName').value = '';
+  document.getElementById('applyError').style.display = 'none';
+  document.getElementById('applyModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('applyModal').classList.remove('show');
+  applyingJobId = null;
+}
+
+function submitApplication() {
+  const resumeName = document.getElementById('resumeName').value.trim();
+  const err = document.getElementById('applyError');
+  if (!resumeName) { showErr(err,'Please enter your CV filename'); return; }
+  const apps = DB.apps();
+  apps.push({ id:'app_'+Date.now(), jobId:applyingJobId, userId:currentUser.id, resumeName, status:'PENDING', createdAt:new Date().toISOString() });
+  DB.saveApps(apps);
+  closeModal();
+  loadJobs();
+  alert('✅ Application submitted successfully!');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────
+function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+</script>
+</body>
+</html>

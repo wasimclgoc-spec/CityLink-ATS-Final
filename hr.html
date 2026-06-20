@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Citylink Group — HR Portal</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',sans-serif; }
+body { background:#f1f5f9; min-height:100vh; }
+.auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(135deg,#14532d,#16a34a); }
+.auth-box { background:white; border-radius:20px; padding:36px; width:100%; max-width:420px; box-shadow:0 20px 40px rgba(0,0,0,.12); }
+.auth-box h1 { font-size:1.4rem; font-weight:700; color:#1e293b; margin-bottom:4px; }
+.auth-box .sub { color:#94a3b8; font-size:.85rem; margin-bottom:24px; }
+.form-group { margin-bottom:16px; }
+.form-group label { display:block; font-size:.82rem; font-weight:600; color:#475569; margin-bottom:6px; }
+.form-group input { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.95rem; outline:none; transition:border .2s; }
+.form-group input:focus { border-color:#16a34a; }
+.btn { width:100%; padding:12px; background:#16a34a; color:white; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; transition:background .2s; }
+.btn:hover { background:#15803d; }
+.btn:disabled { background:#86efac; cursor:not-allowed; }
+.btn-sm { padding:6px 16px; font-size:.82rem; border-radius:8px; border:none; cursor:pointer; font-weight:600; width:auto; }
+.link-row { text-align:center; margin-top:16px; font-size:.85rem; color:#64748b; }
+.link-row a { color:#16a34a; cursor:pointer; font-weight:600; text-decoration:none; }
+.error-msg { background:#fee2e2; color:#dc2626; padding:10px 14px; border-radius:8px; font-size:.85rem; margin-bottom:12px; display:none; }
+.success-msg { background:#dcfce7; color:#16a34a; padding:10px 14px; border-radius:8px; font-size:.85rem; margin-bottom:12px; display:none; }
+.dashboard { display:none; min-height:100vh; }
+.topbar { background:#14532d; color:white; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; }
+.topbar h2 { font-size:1.1rem; font-weight:700; }
+.logout-btn { background:rgba(255,255,255,.2); border:none; color:white; padding:6px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; }
+.sidebar { width:200px; background:white; min-height:calc(100vh - 52px); padding:20px 0; box-shadow:2px 0 8px rgba(0,0,0,.06); position:fixed; top:52px; left:0; }
+.sidebar a { display:block; padding:12px 20px; font-size:.9rem; color:#475569; cursor:pointer; transition:background .15s; font-weight:500; }
+.sidebar a:hover, .sidebar a.active { background:#f0fdf4; color:#16a34a; border-right:3px solid #16a34a; }
+.main { margin-left:200px; padding:24px; }
+.section { display:none; }
+.section.active { display:block; }
+.section-title { font-size:1.2rem; font-weight:700; color:#1e293b; margin-bottom:20px; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:24px; }
+.stat-card { background:white; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); text-align:center; }
+.stat-card .num { font-size:2rem; font-weight:800; color:#16a34a; }
+.stat-card .lbl { font-size:.82rem; color:#64748b; margin-top:4px; }
+.card { background:white; border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+.badge-open { background:#dcfce7; color:#16a34a; }
+.badge-closed { background:#f1f5f9; color:#64748b; }
+.badge-pending { background:#fef9c3; color:#ca8a04; }
+.badge-selected { background:#dcfce7; color:#16a34a; }
+.badge-rejected { background:#fee2e2; color:#dc2626; }
+.badge-screened { background:#dbeafe; color:#2563eb; }
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; padding:10px 12px; font-size:.8rem; color:#64748b; border-bottom:2px solid #e2e8f0; }
+td { padding:10px 12px; font-size:.85rem; color:#1e293b; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+tr:hover td { background:#f8fafc; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:white; border-radius:16px; padding:28px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto; }
+.modal h3 { font-size:1.1rem; font-weight:700; margin-bottom:16px; color:#1e293b; }
+select { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.95rem; outline:none; }
+textarea { width:100%; padding:10px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:.9rem; outline:none; min-height:80px; resize:vertical; }
+.ai-box { background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:20px; margin-bottom:20px; }
+.ai-box h4 { font-size:.95rem; font-weight:700; color:#14532d; margin-bottom:10px; }
+.ai-score { font-weight:800; font-size:1.1rem; }
+.score-high { color:#16a34a; }
+.score-mid { color:#ca8a04; }
+.score-low { color:#dc2626; }
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid #bbf7d0; border-top:2px solid #16a34a; border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.api-banner { background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; padding:10px 14px; font-size:.82rem; color:#92400e; margin-bottom:16px; display:none; }
+.api-banner.show { display:block; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="auth-page" id="loginPage">
+  <div class="auth-box">
+    <h1>🔐 HR Portal</h1>
+    <p class="sub">Citylink Group — Staff Access</p>
+    <div class="error-msg" id="loginError"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="hr@citylink.com"/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="••••••"/></div>
+    <button class="btn" onclick="doLogin()">Sign In</button>
+    <div class="link-row">New HR staff? <a onclick="showPage('registerPage')">Register Here</a></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="auth-page" id="registerPage" style="display:none">
+  <div class="auth-box">
+    <h1>📋 HR Staff Registration</h1>
+    <p class="sub">Requires Admin Approval Code from HR Admin</p>
+    <div class="error-msg" id="regError"></div>
+    <div class="success-msg" id="regSuccess"></div>
+    <div class="form-group"><label>Full Name</label><input type="text" id="regName" placeholder="Full name"/></div>
+    <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com"/></div>
+    <div class="form-group"><label>Mobile</label><input type="tel" id="regMobile" placeholder="+966..."/></div>
+    <div class="form-group"><label>Password</label><input type="password" id="regPass" placeholder="Min 6 characters"/></div>
+    <div class="form-group"><label>Confirm Password</label><input type="password" id="regPass2" placeholder="Repeat password"/></div>
+    <div class="form-group"><label>Admin Approval Code</label><input type="password" id="regCode" placeholder="Ask your HR Admin"/></div>
+    <button class="btn" id="regBtn" onclick="doRegister()">Register</button>
+    <div class="link-row"><a onclick="showPage('loginPage')">← Back to Login</a></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dashboard" id="dashboard">
+  <div class="topbar">
+    <h2>🏢 Citylink HR Portal</h2>
+    <div>
+      <span id="welcomeMsg" style="font-size:.85rem;opacity:.8"></span>
+      <button class="logout-btn" onclick="doLogout()" style="margin-left:12px">Logout</button>
+    </div>
+  </div>
+  <div class="sidebar">
+    <a class="active" onclick="showSection('dashboard', this)">📊 Dashboard</a>
+    <a onclick="showSection('jobs', this)">💼 Job Postings</a>
+    <a onclick="showSection('applications', this)">📄 Applications</a>
+    <a onclick="showSection('aiscreen', this)">🤖 AI Screening</a>
+    <a onclick="showSection('settings', this)">⚙️ Settings</a>
+  </div>
+  <div class="main">
+
+    <!-- Dashboard -->
+    <div class="section active" id="sec-dashboard">
+      <p class="section-title">Dashboard Overview</p>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="num" id="statJobs">0</div><div class="lbl">Open Jobs</div></div>
+        <div class="stat-card"><div class="num" id="statApps">0</div><div class="lbl">Total Applications</div></div>
+        <div class="stat-card"><div class="num" id="statPending">0</div><div class="lbl">Pending Review</div></div>
+        <div class="stat-card"><div class="num" id="statSelected">0</div><div class="lbl">Selected</div></div>
+      </div>
+      <div class="card" style="max-width:400px"><canvas id="statusChart" height="200"></canvas></div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="section" id="sec-jobs">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <p class="section-title" style="margin:0">Job Postings</p>
+        <button class="btn-sm btn" style="width:auto;padding:8px 20px" onclick="openJobModal()">+ Post New Job</button>
+      </div>
+      <div id="jobsList"></div>
+    </div>
+
+    <!-- Applications -->
+    <div class="section" id="sec-applications">
+      <p class="section-title">All Applications</p>
+      <div class="card" style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Candidate</th><th>Email</th><th>Job</th><th>CV</th><th>AI Score</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="appsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI Screening -->
+    <div class="section" id="sec-aiscreen">
+      <p class="section-title">🤖 AI Resume Screening</p>
+      <div class="api-banner" id="apiBanner">
+        ⚠️ No OpenAI API key set. Screening will use basic keyword matching.
+        Go to <strong>Settings</strong> to add your key for full AI screening.
+      </div>
+      <div class="card">
+        <p style="font-size:.9rem;color:#475569;margin-bottom:16px">
+          Screen all pending applications using AI. Each resume will be scored 0-100
+          based on the job requirements, experience, and qualifications.
+        </p>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn-sm btn" style="width:auto;padding:10px 24px;font-size:.9rem" id="screenAllBtn" onclick="screenAll()">
+            🤖 Screen All Applications
+          </button>
+          <span id="screenStatus" style="font-size:.85rem;color:#64748b"></span>
+        </div>
+      </div>
+      <div id="screenResults" style="margin-top:20px"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section" id="sec-settings">
+      <p class="section-title">⚙️ Settings</p>
+      <div class="card">
+        <h4 style="font-size:.95rem;font-weight:700;color:#1e293b;margin-bottom:12px">🔑 OpenAI API Key</h4>
+        <p style="font-size:.82rem;color:#64748b;margin-bottom:14px">
+          Enter your OpenAI API key to enable AI-powered resume screening.
+          The key is stored securely in your browser only.
+        </p>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="apiKeyInput" placeholder="sk-..." style="width:100%"/>
+        </div>
+        <div class="success-msg" id="apiKeySuccess" style="margin-bottom:12px"></div>
+        <button class="btn-sm btn" style="width:auto;padding:8px 24px" onclick="saveApiKey()">Save Key</button>
+        <button class="btn-sm" style="background:#fee2e2;color:#dc2626;padding:8px 24px;margin-left:8px" onclick="removeApiKey()">Remove Key</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Post Job Modal -->
+<div class="modal-overlay" id="jobModal">
+  <div class="modal">
+    <h3>Post New Job</h3>
+    <div class="error-msg" id="jobError"></div>
+    <div class="form-group"><label>Job Title</label><input type="text" id="jTitle" placeholder="e.g. Logistics Coordinator"/></div>
+    <div class="form-group"><label>Description</label><textarea id="jDesc" placeholder="Job responsibilities..."></textarea></div>
+    <div class="form-group"><label>Qualification</label><input type="text" id="jQual" placeholder="e.g. Bachelor's degree"/></div>
+    <div class="form-group"><label>Experience Required</label><input type="text" id="jExp" placeholder="e.g. 2-4 years"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>Min Age</label><input type="number" id="jAgeMin" placeholder="22"/></div>
+      <div class="form-group"><label>Max Age</label><input type="number" id="jAgeMax" placeholder="45"/></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn" style="background:#e2e8f0;color:#475569" onclick="closeJobModal()">Cancel</button>
+      <button class="btn" onclick="saveJob()">Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal">
+    <h3>Update Application Status</h3>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="newStatus">
+        <option value="PENDING">Pending</option>
+        <option value="SELECTED">Selected ✅</option>
+        <option value="REJECTED">Rejected ❌</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button class="btn" style="background:#e2e8f0;color:#475569" onclick="closeStatusModal()">Cancel</button>
+      <button class="btn" onclick="saveStatus()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DB ───────────────────────────────────────────────────────
+const DB = {
+  get: k => JSON.parse(localStorage.getItem('clg_'+k) || 'null'),
+  set: (k,v) => localStorage.setItem('clg_'+k, JSON.stringify(v)),
+  users: () => DB.get('users') || [],
+  jobs:  () => DB.get('jobs')  || [],
+  apps:  () => DB.get('apps')  || [],
+  saveUsers: v => DB.set('users', v),
+  saveJobs:  v => DB.set('jobs',  v),
+  saveApps:  v => DB.set('apps',  v),
+};
+
+(function init() {
+  const users = DB.users();
+  if (!users.find(u => u.email === 'hr@citylink.com')) {
+    users.push({ id:'hr1', name:'HR Admin', email:'hr@citylink.com', mobile:'0500000000', password:'admin123', role:'HR' });
+    DB.saveUsers(users);
+  }
+  if (DB.jobs().length === 0) {
+    DB.saveJobs([{
+      id:'job1', title:'Logistics Coordinator', status:'OPEN',
+      qualification:"Bachelor's in Logistics or Business",
+      experience:'2-4 years', ageMin:22, ageMax:40,
+      description:'Coordinate shipment schedules, manage vendor relationships, track freight movements.',
+      createdAt: new Date().toISOString()
+    }]);
+  }
+})();
+
+const ADMIN_CODE = 'citylink2024';
+let currentUser = null;
+let editingAppId = null;
+let chartInstance = null;
+
+// ─── Pages ────────────────────────────────────────────────────
+function showPage(id) {
+  ['loginPage','registerPage'].forEach(p => {
+    document.getElementById(p).style.display = p===id ? 'flex' : 'none';
+  });
+}
+
+function showSection(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  el.classList.add('active');
+  if (name==='dashboard') loadDashboard();
+  if (name==='jobs') loadJobs();
+  if (name==='applications') loadApplications();
+  if (name==='aiscreen') checkApiKey();
+  if (name==='settings') loadApiKey();
+}
+
+// ─── Auth ─────────────────────────────────────────────────────
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginError');
+  err.style.display = 'none';
+  if (!email||!pass) { showErr(err,'Please fill in all fields'); return; }
+  const user = DB.users().find(u => u.email===email && u.password===pass && u.role==='HR');
+  if (!user) { showErr(err,'Invalid credentials or not an HR account'); return; }
+  currentUser = user;
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('welcomeMsg').textContent = 'Hello, ' + user.name;
+  loadDashboard();
+}
+
+function doRegister() {
+  const name   = document.getElementById('regName').value.trim();
+  const email  = document.getElementById('regEmail').value.trim();
+  const mobile = document.getElementById('regMobile').value.trim();
+  const pass   = document.getElementById('regPass').value;
+  const pass2  = document.getElementById('regPass2').value;
+  const code   = document.getElementById('regCode').value.trim();
+  const err    = document.getElementById('regError');
+  const suc    = document.getElementById('regSuccess');
+  const btn    = document.getElementById('regBtn');
+  err.style.display='none'; suc.style.display='none';
+
+  if (!name||!email||!mobile||!pass||!pass2||!code) { showErr(err,'All fields are required'); return; }
+  if (pass.length < 6) { showErr(err,'Password must be at least 6 characters'); return; }
+  if (pass !== pass2)  { showErr(err,'Passwords do not match'); return; }
+  if (code !== ADMIN_CODE) { showErr(err,'❌ Wrong Admin Approval Code. Ask your HR Admin.'); return; }
+
+  const users = DB.users();
+  if (users.find(u => u.email===email)) { showErr(err,'Email already registered'); return; }
+
+  btn.disabled=true; btn.textContent='Registering...';
+  users.push({ id:'hr_'+Date.now(), name, email, mobile, password:pass, role:'HR' });
+  DB.saveUsers(users);
+
+  suc.textContent = '✅ Registered successfully! Please sign in.';
+  suc.style.display = 'block';
+  btn.textContent='Register'; btn.disabled=false;
+  setTimeout(() => showPage('loginPage'), 1800);
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('dashboard').style.display = 'none';
+  showPage('loginPage');
+}
+
+// ─── Dashboard ────────────────────────────────────────────────
+function loadDashboard() {
+  const jobs = DB.jobs();
+  const apps = DB.apps();
+  document.getElementById('statJobs').textContent    = jobs.filter(j=>j.status==='OPEN').length;
+  document.getElementById('statApps').textContent    = apps.length;
+  document.getElementById('statPending').textContent = apps.filter(a=>a.status==='PENDING').length;
+  document.getElementById('statSelected').textContent= apps.filter(a=>a.status==='SELECTED').length;
+  renderChart(apps);
+}
+
+function renderChart(apps) {
+  const ctx = document.getElementById('statusChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  const pending  = apps.filter(a=>a.status==='PENDING').length;
+  const selected = apps.filter(a=>a.status==='SELECTED').length;
+  const rejected = apps.filter(a=>a.status==='REJECTED').length;
+  chartInstance = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:['Pending','Selected','Rejected'], datasets:[{ data:[pending,selected,rejected], backgroundColor:['#fbbf24','#22c55e','#ef4444'] }] },
+    options:{ plugins:{ legend:{ position:'bottom' } }, cutout:'60%' }
+  });
+}
+
+// ─── Jobs ─────────────────────────────────────────────────────
+function loadJobs() {
+  const jobs = DB.jobs();
+  const el = document.getElementById('jobsList');
+  if (!jobs.length) { el.innerHTML='<p style="color:#94a3b8">No jobs posted yet.</p>'; return; }
+  el.innerHTML = jobs.map(j => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <h3 style="font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:6px">${j.title}</h3>
+          <p style="font-size:.83rem;color:#64748b;margin-bottom:8px">${j.description||''}</p>
+          <span style="font-size:.8rem;color:#94a3b8">${j.experience||''} ${j.qualification?'| '+j.qualification:''}</span>
+        </div>
+        <span class="badge ${j.status==='OPEN'?'badge-open':'badge-closed'}">${j.status}</span>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn-sm" style="background:${j.status==='OPEN'?'#fee2e2':'#dcfce7'};color:${j.status==='OPEN'?'#dc2626':'#16a34a'}" onclick="toggleJob('${j.id}')">
+          ${j.status==='OPEN'?'Close Job':'Reopen Job'}
+        </button>
+        <button class="btn-sm" style="background:#fee2e2;color:#dc2626" onclick="deleteJob('${j.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function openJobModal() {
+  ['jTitle','jDesc','jQual','jExp','jAgeMin','jAgeMax'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('jobError').style.display='none';
+  document.getElementById('jobModal').classList.add('show');
+}
+function closeJobModal() { document.getElementById('jobModal').classList.remove('show'); }
+
+function saveJob() {
+  const title = document.getElementById('jTitle').value.trim();
+  const desc  = document.getElementById('jDesc').value.trim();
+  const qual  = document.getElementById('jQual').value.trim();
+  const exp   = document.getElementById('jExp').value.trim();
+  const ageMin= document.getElementById('jAgeMin').value;
+  const ageMax= document.getElementById('jAgeMax').value;
+  const err   = document.getElementById('jobError');
+  if (!title||!desc) { showErr(err,'Title and description are required'); return; }
+  const jobs = DB.jobs();
+  jobs.push({ id:'job_'+Date.now(), title, description:desc, qualification:qual, experience:exp, ageMin:ageMin||null, ageMax:ageMax||null, status:'OPEN', createdAt:new Date().toISOString() });
+  DB.saveJobs(jobs);
+  closeJobModal();
+  loadJobs();
+}
+
+function toggleJob(id) {
+  const jobs = DB.jobs();
+  const j = jobs.find(x=>x.id===id);
+  if (j) j.status = j.status==='OPEN'?'CLOSED':'OPEN';
+  DB.saveJobs(jobs);
+  loadJobs();
+}
+
+function deleteJob(id) {
+  if (!confirm('Delete this job? All related applications will also be removed.')) return;
+  DB.saveJobs(DB.jobs().filter(j=>j.id!==id));
+  DB.saveApps(DB.apps().filter(a=>a.jobId!==id));
+  loadJobs();
+}
+
+// ─── Applications ─────────────────────────────────────────────
+function loadApplications() {
+  const apps  = DB.apps();
+  const jobs  = DB.jobs();
+  const users = DB.users();
+  const tbody = document.getElementById('appsTable');
+  if (!apps.length) { tbody.innerHTML='<tr><td colspan="7" style="color:#94a3b8;padding:20px">No applications yet.</td></tr>'; return; }
+  tbody.innerHTML = apps.map(a => {
+    const job  = jobs.find(j=>j.id===a.jobId)||{};
+    const user = users.find(u=>u.id===a.userId)||{};
+    const bc   = a.status==='SELECTED'?'badge-selected':a.status==='REJECTED'?'badge-rejected':'badge-pending';
+    const scoreHtml = a.aiScore !== null && a.aiScore !== undefined
+      ? `<span class="ai-score ${a.aiScore>=70?'score-high':a.aiScore>=40?'score-mid':'score-low'}">${a.aiScore}/100</span>`
+      : '<span style="color:#94a3b8;font-size:.8rem">Not screened</span>';
+    return `<tr>
+      <td><strong>${user.name||'Unknown'}</strong><br><span style="font-size:.78rem;color:#94a3b8">${user.mobile||''}</span></td>
+      <td>${user.email||'—'}</td>
+      <td>${job.title||'—'}</td>
+      <td style="font-size:.82rem">${a.resumeName}</td>
+      <td>${scoreHtml}</td>
+      <td><span class="badge ${bc}">${a.status}</span></td>
+      <td><button class="btn-sm" style="background:#eff6ff;color:#2563eb" onclick="openStatusModal('${a.id}','${a.status}')">Update</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openStatusModal(appId, currentStatus) {
+  editingAppId = appId;
+  document.getElementById('newStatus').value = currentStatus;
+  document.getElementById('statusModal').classList.add('show');
+}
+function closeStatusModal() { document.getElementById('statusModal').classList.remove('show'); editingAppId=null; }
+
+function saveStatus() {
+  const status = document.getElementById('newStatus').value;
+  const apps = DB.apps();
+  const a = apps.find(x=>x.id===editingAppId);
+  if (a) a.status = status;
+  DB.saveApps(apps);
+  closeStatusModal();
+  loadApplications();
+}
+
+// ─── AI Screening ─────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('clg_openai_key') || ''; }
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const suc = document.getElementById('apiKeySuccess');
+  if (!key) { suc.textContent='⚠️ Please enter a key'; suc.style.background='#fef3c7'; suc.style.color='#92400e'; suc.style.display='block'; return; }
+  localStorage.setItem('clg_openai_key', key);
+  suc.textContent = '✅ API key saved! AI screening is now active.';
+  suc.style.background = '#dcfce7'; suc.style.color = '#16a34a'; suc.style.display = 'block';
+  setTimeout(() => suc.style.display='none', 3000);
+}
+
+function removeApiKey() {
+  localStorage.removeItem('clg_openai_key');
+  document.getElementById('apiKeyInput').value = '';
+  const suc = document.getElementById('apiKeySuccess');
+  suc.textContent = '✅ API key removed. Screening will use basic matching.';
+  suc.style.background='#fef3c7'; suc.style.color='#92400e'; suc.style.display='block';
+  setTimeout(() => suc.style.display='none', 3000);
+}
+
+function loadApiKey() {
+  document.getElementById('apiKeyInput').value = getApiKey();
+}
+
+function checkApiKey() {
+  const banner = document.getElementById('apiBanner');
+  if (getApiKey()) banner.classList.remove('show');
+  else banner.classList.add('show');
+}
+
+async function screenAll() {
+  const apps = DB.apps();
+  const jobs = DB.jobs();
+  const users = DB.users();
+  const btn = document.getElementById('screenAllBtn');
+  const status = document.getElementById('screenStatus');
+  const results = document.getElementById('screenResults');
+
+  if (!apps.length) { status.textContent = 'No applications to screen.'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Screening...';
+  results.innerHTML = '';
+
+  const apiKey = getApiKey();
+  const screenedApps = [];
+
+  for (let i = 0; i < apps.length; i++) {
+    const a = apps[i];
+    const job = jobs.find(j => j.id === a.jobId) || {};
+    const user = users.find(u => u.id === a.userId) || {};
+    status.innerHTML = `<span class="spinner"></span> Screening ${i+1}/${apps.length}: ${user.name||'Candidate'}...`;
+
+    let score, summary;
+    if (apiKey) {
+      try {
+        const result = await screenWithOpenAI(apiKey, user, job, a.resumeName);
+        score = result.score;
+        summary = result.summary;
+      } catch(e) {
+        score = screenBasic(user, job, a.resumeName);
+        summary = 'AI error — used basic matching. Check your API key.';
+      }
+    } else {
+      score = screenBasic(user, job, a.resumeName);
+      summary = 'Basic keyword matching (no API key set).';
+    }
+
+    a.aiScore = score;
+    a.aiSummary = summary;
+    screenedApps.push({ app: a, user, job, score, summary });
+  }
+
+  DB.saveApps(apps);
+  status.innerHTML = '✅ Screening complete!';
+  btn.disabled = false;
+  btn.innerHTML = '🤖 Screen All Applications';
+
+  // Show results sorted by score
+  screenedApps.sort((a,b) => b.score - a.score);
+  results.innerHTML = screenedApps.map(s => {
+    const sc = s.score>=70?'score-high':s.score>=40?'score-mid':'score-low';
+    return `<div class="ai-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>${s.user.name||'Candidate'}</strong>
+        <span class="ai-score ${sc}">${s.score}/100</span>
+      </div>
+      <p style="font-size:.82rem;color:#475569;margin-bottom:6px"><strong>Job:</strong> ${s.job.title||'—'}</p>
+      <p style="font-size:.82rem;color:#64748b">${s.summary}</p>
+    </div>`;
+  }).join('');
+}
+
+async function screenWithOpenAI(apiKey, user, job, resumeName) {
+  const prompt = `You are an AI resume screening assistant for a company called Citylink Group.
+Evaluate this candidate for the following job:
+
+Job Title: ${job.title || 'N/A'}
+Job Description: ${job.description || 'N/A'}
+Required Qualification: ${job.qualification || 'N/A'}
+Required Experience: ${job.experience || 'N/A'}
+
+Candidate Name: ${user.name || 'N/A'}
+Candidate Email: ${user.email || 'N/A'}
+Candidate Mobile: ${user.mobile || 'N/A'}
+Resume/CV Filename: ${resumeName || 'N/A'}
+
+Based on the available information, provide:
+1. A match score from 0 to 100
+2. A brief 1-2 sentence summary explaining the score
+
+Respond in this exact JSON format:
+{"score": <number>, "summary": "<text>"}`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      max_tokens: 200
+    })
+  });
+
+  if (!response.ok) throw new Error('OpenAI API error: ' + response.status);
+  const data = await response.json();
+  const text = data.choices[0].message.content;
+  const match = text.match(/\{[\s\S]*\}/);
+  if (match) {
+    const parsed = JSON.parse(match[0]);
+    return { score: Math.max(0, Math.min(100, parseInt(parsed.score) || 0)), summary: parsed.summary || '' };
+  }
+  return { score: 50, summary: 'Unable to parse AI response.' };
+}
+
+function screenBasic(user, job, resumeName) {
+  let score = 30;
+  if (user.name) score += 5;
+  if (user.email) score += 5;
+  if (user.mobile) score += 5;
+  if (resumeName && resumeName.length > 5) score += 10;
+  if (job.experience && resumeName.toLowerCase().includes('cv')) score += 10;
+  if (job.qualification) score += 10;
+  score += Math.floor(Math.random() * 25);
+  return Math.min(100, score);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────
+function showErr(el, msg) { el.textContent=msg; el.style.display='block'; }
+</script>
+</body>
+</html>
