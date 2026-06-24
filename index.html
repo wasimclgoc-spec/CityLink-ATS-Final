@@ -116,7 +116,21 @@ body { background:#f1f5f9; min-height:100vh; }
   <div class="modal">
     <h3>Apply for <span id="modalJobTitle"></span></h3>
     <div class="error-msg" id="applyError"></div>
-    <div class="form-group"><label>Resume / CV Filename</label><input type="text" id="resumeName" placeholder="e.g. MyCV_2026.pdf"/></div>
+    <div class="form-group">
+      <label style="display:block;font-size:.85rem;font-weight:600;color:#374151;margin-bottom:8px;">📄 Upload Resume / CV <span style="color:#dc2626">*</span></label>
+      <div id="dropZone"
+        onclick="document.getElementById('cvFileInput').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#2563eb';this.style.background='#dbeafe'"
+        ondragleave="this.style.borderColor='#93c5fd';this.style.background='#eff6ff'"
+        ondrop="handleCVDrop(event)"
+        style="border:2.5px dashed #93c5fd;border-radius:12px;padding:28px 16px;text-align:center;background:#eff6ff;cursor:pointer;transition:all .2s;">
+        <div style="font-size:2.2rem;margin-bottom:8px;">📁</div>
+        <div style="font-size:.9rem;font-weight:700;color:#1d4ed8;">Click to browse or drag & drop your CV here</div>
+        <div style="font-size:.75rem;color:#64748b;margin-top:6px;">Accepted: PDF, Word (.doc, .docx) — Max 2MB</div>
+      </div>
+      <input type="file" id="cvFileInput" accept=".pdf,.doc,.docx" style="display:none" onchange="handleCVSelect(this)"/>
+      <div id="cvFileStatus" style="display:none;margin-top:8px;padding:10px 14px;border-radius:8px;font-size:.83rem;font-weight:600;"></div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:8px">
       <button class="btn" style="background:#e2e8f0;color:#475569" onclick="closeModal()">Cancel</button>
       <button class="btn" onclick="submitApplication()">Submit Application</button>
@@ -285,7 +299,11 @@ function loadMyApps() {
 function openApply(jobId, jobTitle) {
   applyingJobId = jobId;
   document.getElementById('modalJobTitle').textContent = jobTitle;
-  document.getElementById('resumeName').value = '';
+  document.getElementById('cvFileInput').value = '';
+  document.getElementById('cvFileStatus').style.display = 'none';
+  document.getElementById('dropZone').style.borderColor = '#93c5fd';
+  document.getElementById('dropZone').style.background = '#eff6ff';
+  document.getElementById('dropZone').innerHTML = '<div style="font-size:2.2rem;margin-bottom:8px;">📁</div><div style="font-size:.9rem;font-weight:700;color:#1d4ed8;">Click to browse or drag & drop your CV here</div><div style="font-size:.75rem;color:#64748b;margin-top:6px;">Accepted: PDF, Word (.doc, .docx) — Max 2MB</div>';
   document.getElementById('applyError').style.display = 'none';
   document.getElementById('applyModal').classList.add('show');
 }
@@ -296,9 +314,14 @@ function closeModal() {
 }
 
 function submitApplication() {
-  const resumeName = document.getElementById('resumeName').value.trim();
+  const cvInput = document.getElementById('cvFileInput');
+  const cvFile = cvInput.files[0];
   const err = document.getElementById('applyError');
-  if (!resumeName) { showErr(err,'Please enter your CV filename'); return; }
+  if (!cvFile) { showErr(err,'Please upload your CV/Resume file'); return; }
+  const allowedTypes = ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword'];
+  if (!allowedTypes.includes(cvFile.type)) { showErr(err,'Only PDF or Word files are allowed'); return; }
+  if (cvFile.size > 2 * 1024 * 1024) { showErr(err,'File size must be under 2MB'); return; }
+  const resumeName = cvFile.name;
   const apps = DB.apps();
   apps.push({ id:'app_'+Date.now(), jobId:applyingJobId, userId:currentUser.id, resumeName, status:'PENDING', createdAt:new Date().toISOString() });
   DB.saveApps(apps);
@@ -309,6 +332,38 @@ function submitApplication() {
 
 // ─── Helpers ──────────────────────────────────────────────────
 function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+// ── CV File Upload Helpers ────────────────────────────────────
+function handleCVSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const allowed = ['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword'];
+  const status = document.getElementById('cvFileStatus');
+  const dz = document.getElementById('dropZone');
+  status.style.display = 'block';
+  if (!allowed.includes(file.type)) {
+    status.textContent = '❌ Only PDF or Word files are allowed';
+    status.style.background = '#fef2f2'; status.style.color = '#dc2626'; return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    status.textContent = '❌ File size must be under 2MB';
+    status.style.background = '#fef2f2'; status.style.color = '#dc2626'; return;
+  }
+  status.textContent = '✅ ' + file.name + '  —  Ready to submit!';
+  status.style.background = '#f0fdf4'; status.style.color = '#15803d';
+  dz.style.borderColor = '#16a34a'; dz.style.background = '#f0fdf4';
+  dz.innerHTML = '<div style="font-size:1.8rem;margin-bottom:6px;">✅</div><div style="font-size:.88rem;font-weight:700;color:#15803d;">' + file.name + '</div><div style="font-size:.75rem;color:#64748b;margin-top:4px;">Click to change file</div>';
+}
+function handleCVDrop(event) {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('cvFileInput').files = dt.files;
+  handleCVSelect(document.getElementById('cvFileInput'));
+}
+
 </script>
 </body>
 </html>
